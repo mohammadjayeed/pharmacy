@@ -1,7 +1,9 @@
 import os
 from django.db import models
 from django.core.validators import MinValueValidator
-from validators import validate_pdf, validate_image
+from .validators import validate_pdf, validate_image
+
+
 
 class Product(models.Model):
     name = models.CharField(max_length=100)
@@ -15,6 +17,9 @@ class Product(models.Model):
     def __str__(self) -> str:
         return self.name
 
-    def delete(self, **kwargs):
-        os.remove(self.image.path)
-        super().delete(**kwargs)
+    # def delete(self, **kwargs):
+    #     if self.image:
+    #         os.remove(self.image.path)
+    #     if self.digital_catalog:
+    #         os.remove(self.digital_catalog.path)
+    #     super().delete(**kwargs)
