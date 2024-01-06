@@ -8,19 +8,21 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ProductRetrieveSerializer
 from .models import Product
 from .utils import pdf_generate
 from .filters import ProductFilter
 from .throttling import ProductDetailViewThrottle, TotalAnonVisit
 from .pagination import Pagination
 
+
+# product viewset for list, create, update, partial_update, delete, download
 class ProductViewSet(ViewSet):
     
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ProductFilter
-    throttle_classes = [TotalAnonVisit]
+    filter_backends = [DjangoFilterBackend]  # filterbackend from rest_framework
+    filterset_class = ProductFilter # filtering for manufacturer, expiration = > <
+    throttle_classes = [TotalAnonVisit] # custom throttle class for total anonymous visit restriction
     
 
     # @method_decorator(cache_page(2*60))
@@ -30,10 +32,10 @@ class ProductViewSet(ViewSet):
         # result = cache_test.json()
 
         products = Product.objects.all()
-        filter_instance = self.filterset_class(request.GET, queryset=products)
+        filter_instance = self.filterset_class(request.GET, queryset=products) # custom filtering in action
         queryset = filter_instance.qs
 
-        paginator = Pagination()
+        paginator = Pagination() # declaring pagination class , this class is custom  , can change parameters in pagination.py
         result_page = paginator.paginate_queryset(queryset, request)
 
         serializer = ProductSerializer(result_page, many=True)
@@ -75,18 +77,6 @@ class ProductViewSet(ViewSet):
     def partial_update(self, request, pk):
         return self.update_product(request, pk, partial=True)
 
-   
-
-    def delete(self, request, pk):
-        
-        try:
-            queryset = Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return Response({"status": "success","message": "Sorry, we couldn't find any matching product."}, status.HTTP_404_NOT_FOUND)
-        
-        queryset.delete()
-
-        return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)
     
 
     @action(detail=True, methods=['get'])
@@ -119,6 +109,18 @@ class ProductRetieveViewSet(ViewSet):
         except Product.DoesNotExist:
             return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
         
-        serializer = ProductSerializer(queryset)
+        serializer = ProductRetrieveSerializer(queryset)
         
         return Response({"status": "success","results": serializer.data})
+    
+
+    def delete(self, request, pk):
+        
+        try:
+            queryset = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({"status": "success","message": "Sorry, we couldn't find any matching product."}, status.HTTP_404_NOT_FOUND)
+        
+        queryset.delete()
+
+        return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)

@@ -4,4 +4,9 @@ from .models import Product
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
+        exclude = ('created_at', 'updated_at', 'digital_catalog', 'expiration')
+
+class ProductRetrieveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
         exclude = ('created_at', 'updated_at')
