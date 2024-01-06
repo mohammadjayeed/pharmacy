@@ -1,27 +1,44 @@
-from rest_framework.viewsets import ViewSet
-from .models import Product
-from .serializers import ProductSerializer
+import requests
+from rest_framework.viewsets import ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from easy_pdf.rendering import render_to_pdf_response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.decorators import action, throttle_classes, authentication_classes
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
+from .serializers import ProductSerializer
+from .models import Product
 from .utils import pdf_generate
-from django.http import FileResponse
-import io
-from reportlab.pdfgen import canvas 
-from reportlab.lib.units import inch
-from reportlab.lib.pagesizes import letter
+from .filters import ProductFilter
+from .throttling import ProductDetailViewThrottle, TotalAnonVisit
+from .pagination import Pagination
 
 class ProductViewSet(ViewSet):
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilter
+    throttle_classes = [TotalAnonVisit]
+    
 
-
+    # @method_decorator(cache_page(2*60))
     def list(self, request):
+        
+        # cache_test = requests.get('https://httpbin.org/delay/3')
+        # result = cache_test.json()
+
         products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response({"status": "success","results": serializer.data})
+        filter_instance = self.filterset_class(request.GET, queryset=products)
+        queryset = filter_instance.qs
+
+        paginator = Pagination()
+        result_page = paginator.paginate_queryset(queryset, request)
+
+        serializer = ProductSerializer(result_page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
     def create(self, request):
         
@@ -34,16 +51,7 @@ class ProductViewSet(ViewSet):
         serializer.save()
         return Response({"status": "success","message": "product created."}, status.HTTP_201_CREATED)
     
-    def retrieve(self, request, pk):
-        
-        try:
-            queryset = Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
-        
-        serializer = ProductSerializer(queryset)
-        
-        return Response({"status": "success","results": serializer.data})
+
     
 
     def update_product(self, request, pk, partial=False):
@@ -96,4 +104,21 @@ class ProductViewSet(ViewSet):
         image = queryset.image.path if queryset.image else None
 
         return pdf_generate(name,description,price,image)
-       
+
+   
+class ProductRetieveViewSet(ViewSet):
+    
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
+
+    # @method_decorator(cache_page(2*60))
+    def retrieve(self, request, pk):
+        
+        try:
+            queryset = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
+        
+        serializer = ProductSerializer(queryset)
+        
+        return Response({"status": "success","results": serializer.data})
