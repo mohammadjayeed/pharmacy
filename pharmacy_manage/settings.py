@@ -12,20 +12,29 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import environ
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR = os.path.join(BASE_DIR, 'config')
+
+environ.Env.read_env(os.path.join(CONFIG_DIR,'.env'))
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+env = environ.Env()
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hzhw!*9j+_gyzmsu45xnqqzq-kfipmc@(-a-fz72hiv=oy35)+'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+environ.Env.read_env(os.path.join(CONFIG_DIR, '.env'))
 
-ALLOWED_HOSTS = []
+
+SECRET_KEY = env('SECRET')
+
+
+DEBUG = env.bool('DEBUG', default=False)
+
+
+
+ALLOWED_HOSTS = env('HOSTS').split(',')
 
 
 # Application definition
@@ -171,7 +180,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

@@ -67,8 +67,8 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
     parser_classes = (MultiPartParser,)
     throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
 
-    # @method_decorator(cache_page(2*60))
-    
+     
+    @method_decorator(cache_page(1*60))
     def retrieve(self, request, pk):
         
         try:

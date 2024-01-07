@@ -7,6 +7,6 @@ class ProductFilter(FilterSet):
         model = Product
         fields = {
             'manufacturer':['iexact'],
-            'expiration':['exact','gt','lt'],
+            'expiration_date':['exact','gt','lt'],
 
         }
