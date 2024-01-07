@@ -56,6 +56,37 @@ class ProductViewSet(ViewSet):
 
     
 
+
+   
+class ProductRetieveUpdateDeleteViewSet(ViewSet):
+    
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
+
+    # @method_decorator(cache_page(2*60))
+    def retrieve(self, request, pk):
+        
+        try:
+            queryset = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
+        
+        serializer = ProductRetrieveSerializer(queryset)
+        
+        return Response({"status": "success","results": serializer.data})
+    
+
+    def destroy(self, request, pk):
+        
+        try:
+            queryset = Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return Response({"status": "success","message": "Sorry, we couldn't find any matching product."}, status.HTTP_404_NOT_FOUND)
+        
+        queryset.delete()
+
+        return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)
+    
     def update_product(self, request, pk, partial=False):
         try:
             queryset = Product.objects.get(pk=pk)
@@ -94,33 +125,3 @@ class ProductViewSet(ViewSet):
         image = queryset.image.path if queryset.image else None
 
         return pdf_generate(name,description,price,image)
-
-   
-class ProductRetieveViewSet(ViewSet):
-    
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
-
-    # @method_decorator(cache_page(2*60))
-    def retrieve(self, request, pk):
-        
-        try:
-            queryset = Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
-        
-        serializer = ProductRetrieveSerializer(queryset)
-        
-        return Response({"status": "success","results": serializer.data})
-    
-
-    def delete(self, request, pk):
-        
-        try:
-            queryset = Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return Response({"status": "success","message": "Sorry, we couldn't find any matching product."}, status.HTTP_404_NOT_FOUND)
-        
-        queryset.delete()
-
-        return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)
