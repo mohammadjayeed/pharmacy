@@ -6,7 +6,7 @@ class ProductFilter(FilterSet):
     class Meta:
         model = Product
         fields = {
-            'manufacturer':['exact'],
+            'manufacturer':['iexact'],
             'expiration':['exact','gt','lt'],
 
         }

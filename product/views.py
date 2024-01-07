@@ -8,14 +8,14 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
-from .serializers import ProductSerializer, ProductRetrieveSerializer
+from .serializers import ProductSerializer
 from .models import Product
 from .utils import pdf_generate
 from .filters import ProductFilter
 from .throttling import ProductDetailViewThrottle, TotalAnonVisit
 from .pagination import Pagination
-
-
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.parsers import MultiPartParser
 # product viewset for list, create, update, partial_update, delete, download
 class ProductViewSet(ViewSet):
     
@@ -23,13 +23,26 @@ class ProductViewSet(ViewSet):
     filter_backends = [DjangoFilterBackend]  # filterbackend from rest_framework
     filterset_class = ProductFilter # filtering for manufacturer, expiration = > <
     throttle_classes = [TotalAnonVisit] # custom throttle class for total anonymous visit restriction
+    parser_classes = (MultiPartParser,)
     
+    @swagger_auto_schema(request_body=ProductSerializer)
+    def create(self, request):
+        
+        
+        serializer = ProductSerializer(data=request.data)
 
-    # @method_decorator(cache_page(2*60))
+        if not serializer.is_valid():
+            return Response({"status": "error","message": serializer.errors}, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        
+        serializer.save()
+        return Response({"status": "success","message": "product created."}, status.HTTP_201_CREATED)
+    
+    
+    @method_decorator(cache_page(1*60))
     def list(self, request):
         
-        # cache_test = requests.get('https://httpbin.org/delay/3')
-        # result = cache_test.json()
+        cache_test = requests.get('https://httpbin.org/delay/3')
+        result = cache_test.json()
 
         products = Product.objects.all()
         filter_instance = self.filterset_class(request.GET, queryset=products) # custom filtering in action
@@ -42,16 +55,6 @@ class ProductViewSet(ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def create(self, request):
-        
-        
-        serializer = ProductSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response({"status": "error","message": serializer.errors}, status.HTTP_422_UNPROCESSABLE_ENTITY)
-        
-        serializer.save()
-        return Response({"status": "success","message": "product created."}, status.HTTP_201_CREATED)
     
 
     
@@ -61,9 +64,11 @@ class ProductViewSet(ViewSet):
 class ProductRetieveUpdateDeleteViewSet(ViewSet):
     
     permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = (MultiPartParser,)
     throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
 
     # @method_decorator(cache_page(2*60))
+    
     def retrieve(self, request, pk):
         
         try:
@@ -71,11 +76,11 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
         except Product.DoesNotExist:
             return Response({"status": "success","message": "No matching product."}, status.HTTP_404_NOT_FOUND)
         
-        serializer = ProductRetrieveSerializer(queryset)
+        serializer = ProductSerializer(queryset)
         
         return Response({"status": "success","results": serializer.data})
     
-
+    
     def destroy(self, request, pk):
         
         try:
@@ -86,7 +91,6 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
         queryset.delete()
 
         return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)
-    
     def update_product(self, request, pk, partial=False):
         try:
             queryset = Product.objects.get(pk=pk)
@@ -101,10 +105,12 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
         serializer.save()
 
         return Response({"status": "success", "message": "Product updated successfully."})
-
+    
+    @swagger_auto_schema(request_body=ProductSerializer)
     def update(self, request, pk):
         return self.update_product(request, pk)
-
+    
+    @swagger_auto_schema(request_body=ProductSerializer(partial=True))
     def partial_update(self, request, pk):
         return self.update_product(request, pk, partial=True)
 

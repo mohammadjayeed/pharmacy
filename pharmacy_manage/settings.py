@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'product',
     'rest_framework',
     'django_filters',
+    'drf_yasg',
     'django_cleanup.apps.CleanupConfig',
 ]
 
@@ -122,7 +123,18 @@ REST_FRAMEWORK = {
         'prod_detail': '10/day',
     }
 }
-    
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "Enter your JWT as 'Bearer <token>'."
+        },
+        
+    }
+   
+}
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
