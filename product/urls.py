@@ -9,4 +9,5 @@ urlpatterns = [
                                                                                 'put': 'update', 
                                                                                 'patch': 'partial_update', 
                                                                                 'delete': 'destroy'}), name='product-details'),
+    path('products/<int:pk>/download/', views.ProductInfoDownloadViewSet.as_view({'get': 'retrieve'}), name='product-info-download'),
     ]

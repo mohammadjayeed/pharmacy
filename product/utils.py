@@ -4,6 +4,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
 
+
+# pdf generation logic using reportlab module
 def pdf_generate(name,description,price,image=None):
 
     price = str(price)
@@ -24,13 +26,13 @@ def pdf_generate(name,description,price,image=None):
     object.textLine("-" * 50)  
 
     object.textLine(f"Product Name: {name}")
-    object.textLine("-" * 50)  # Add a line of dashes between lines
+    object.textLine("-" * 50)  # Adding a line of dashes between lines
 
     object.textLine(f"Product Description: {description}")
-    object.textLine("-" * 50)  # Add a line of dashes between lines
+    object.textLine("-" * 50)  # Adding a line of dashes between lines
 
     object.textLine(f"Product Price: {price}")
-    object.textLine("-" * 50)  # Add a line of dashes after the last line
+    object.textLine("-" * 50)  # Adding a line of dashes after the last line
 
 
 

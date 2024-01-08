@@ -18,6 +18,10 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.parsers import MultiPartParser
 # product viewset for list, create, update, partial_update, delete, download
 class ProductViewSet(ViewSet):
+
+    '''
+    Viewset responsible for create and get of products
+    '''
     
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]  # filterbackend from rest_framework
@@ -25,7 +29,7 @@ class ProductViewSet(ViewSet):
     throttle_classes = [TotalAnonVisit] # custom throttle class for total anonymous visit restriction
     parser_classes = (MultiPartParser,)
     
-    @swagger_auto_schema(request_body=ProductSerializer)
+    @swagger_auto_schema(request_body=ProductSerializer) # decorator so that swagger picks up the endpoint
     def create(self, request):
         
         
@@ -38,11 +42,16 @@ class ProductViewSet(ViewSet):
         return Response({"status": "success","message": "product created."}, status.HTTP_201_CREATED)
     
     
-    @method_decorator(cache_page(1*60))
+
+    # enable/disable  cache_page decorator for cache_page management of GET endpoint , time is 1 minute
+    # @method_decorator(cache_page(1*60))  
     def list(self, request):
         
-        cache_test = requests.get('https://httpbin.org/delay/3')
-        result = cache_test.json()
+
+        # demonstrating delay of 2 seconds, once cached, delay will be cancelled 
+        # will execute again once cache resets
+        cache_test = requests.get('https://httpbin.org/delay/2')
+        result = cache_test.json()  
 
         products = Product.objects.all()
         filter_instance = self.filterset_class(request.GET, queryset=products) # custom filtering in action
@@ -56,19 +65,19 @@ class ProductViewSet(ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     
-
-    
-
-
-   
 class ProductRetieveUpdateDeleteViewSet(ViewSet):
+
+    '''
+    Viewset responsible for detail-view, put, patch, delete of products
+    '''
     
     permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = (MultiPartParser,)
     throttle_classes = [ProductDetailViewThrottle, TotalAnonVisit]  
 
-     
-    @method_decorator(cache_page(1*60))
+
+    # enable/disable  cache_page decorator for cache management of GET endpoint , time is 1 minute
+    # @method_decorator(cache_page(1*60))
     def retrieve(self, request, pk):
         
         try:
@@ -91,7 +100,10 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
         queryset.delete()
 
         return Response({"status": "success","message": "Product deleted successfully."}, status.HTTP_204_NO_CONTENT)
+    
+
     def update_product(self, request, pk, partial=False):
+
         try:
             queryset = Product.objects.get(pk=pk)
         except Product.DoesNotExist:
@@ -106,18 +118,22 @@ class ProductRetieveUpdateDeleteViewSet(ViewSet):
 
         return Response({"status": "success", "message": "Product updated successfully."})
     
+
     @swagger_auto_schema(request_body=ProductSerializer)
     def update(self, request, pk):
         return self.update_product(request, pk)
     
+
     @swagger_auto_schema(request_body=ProductSerializer(partial=True))
     def partial_update(self, request, pk):
         return self.update_product(request, pk, partial=True)
 
     
-
-    @action(detail=True, methods=['get'])
-    def download(self, request, pk=None):
+class ProductInfoDownloadViewSet(ViewSet):
+    '''
+    Viewset responsible for downloading product information in pdf format
+    '''
+    def retrieve(self,request,pk):
 
         try:
             queryset = Product.objects.get(pk=pk)

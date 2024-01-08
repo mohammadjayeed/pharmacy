@@ -22,9 +22,3 @@ class Product(models.Model):
         
     def __str__(self) -> str:
         return self.name
-    # def delete(self, **kwargs):
-    #     if self.image:
-    #         os.remove(self.image.path)
-    #     if self.digital_catalog:
-    #         os.remove(self.digital_catalog.path)
-    #     super().delete(**kwargs)
