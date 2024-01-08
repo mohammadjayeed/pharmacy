@@ -8,6 +8,8 @@ COPY requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt
 
+RUN mkdir static
+
 COPY . .
 
 EXPOSE 8000
