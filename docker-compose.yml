@@ -7,5 +7,6 @@ services:
       - ./database:/code/database   # ensures database data persists
     ports:
       - 8000:8000
-    container_name: test_2
+    image: app:v1
+    container_name: product_module
     command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
