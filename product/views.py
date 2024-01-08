@@ -50,7 +50,7 @@ class ProductViewSet(ViewSet):
 
         # demonstrating delay of 2 seconds, once cached, delay will be cancelled 
         # will execute again once cache resets
-        cache_test = requests.get('https://httpbin.org/delay/2')
+        cache_test = requests.get('https://httpbin.org/delay/1')
         result = cache_test.json()  
 
         products = Product.objects.all()
